@@ -110,6 +110,7 @@ def proccess_line(line, mode): # 'mode' is one of "blastcmd", "rbpmap"
 
     if strand == '+':
         cds_start = int(line[CDS_START_FIELD])
+        cds_end= int(line[CDS_END_FIELD])
 
         # 3' ----------------------------------------  5'
         # 5' -----ex_start-----ex_end-----cds_start--> 3'
@@ -118,9 +119,19 @@ def proccess_line(line, mode): # 'mode' is one of "blastcmd", "rbpmap"
         # 5' -----ex_start----cds_start-----ex_end---> 3'
 
         # list of tuples of coordinates, where the the start of the exon is before the start of the CDS
-        exons_to_keep = [(int(exon_start),int(exon_ends[i]))
-                         for i, exon_start in enumerate(exon_starts)
-                         if int(exon_start) < cds_start]
+        # exons_to_keep = [(int(exon_start),int(exon_ends[i]))
+        #                  for i, exon_start in enumerate(exon_starts)
+        #                  if int(exon_start) < cds_start]
+        exons_to_keep = []
+        for i, exon_start in enumerate(exon_starts):
+            exon_end = exon_ends[i]
+            if int(exon_end) < cds_start:
+                exons_to_keep.append((int(exon_start),int(exon_end)))
+            elif exon_start < cds_start and int(exon_end) > cds_start:
+                exons_to_keep.append((int(exon_start),int(cds_end)))
+            else: continue
+
+
         blastcmd_entries = ["{chr} {start}-{end} plus".format(chr=chrom, start=start, end=end) for start, end in exons_to_keep]
         rbpmap_entries = ["{chr}:{start}-{end}:plus".format(chr=chrom, start=start, end=end) for start, end in exons_to_keep]
 
@@ -131,13 +142,23 @@ def proccess_line(line, mode): # 'mode' is one of "blastcmd", "rbpmap"
 
         # 3' <-----ex_start----cds_start-----ex_end-- 5'
         # 5' ---------------------------------------- 3'
-
+        cds_start = int(line[CDS_START_FIELD])
         cds_end = int(line[CDS_END_FIELD])
 
         # list of tuples of coordinates, where the the start of the exon is before the start of the CDS
-        exons_to_keep = [(int(exon_starts[i]),int(exon_end))
-                         for i, exon_end in enumerate(exon_ends)
-                         if int(exon_end) > cds_end]
+        # exons_to_keep = [(int(exon_starts[i]),int(exon_end))
+        #                  for i, exon_end in enumerate(exon_ends)
+        #                  if int(exon_end) > cds_end]
+
+        exons_to_keep = []
+        for i, exon_end in enumerate(exon_ends):
+            exon_start = exon_starts[i]
+
+            if int(exon_start) > cds_start:
+                exons_to_keep.append((int(exon_start),int(exon_end)))
+            elif exon_start < cds_start and int(exon_end) > cds_start:
+                exons_to_keep.append((int(cds_start),int(exon_end)))
+            else: continue
 
         blastcmd_entries = ["{chr} {start}-{end} minus".format(chr=chrom, start=start, end=end) for start, end in exons_to_keep]
         blastcmd_entries.reverse() # since this will give the reverse compliment, in order to get a correct concatenation we want to reverse the order of the exons.

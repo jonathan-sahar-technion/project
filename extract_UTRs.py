@@ -1,9 +1,6 @@
 #!/usr/bin/python
 
 import csv
-import pandas as pd
-import sys
-
 
 # exon-starts are 0-based, exon-ends are 1-based
 # my_input_file = sys.argv[1]
