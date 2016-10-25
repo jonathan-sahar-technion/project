@@ -1,14 +1,13 @@
-# from cogent.parse.consan import sequence
+
 from collections import Counter
 from itertools import combinations
 import re
-import numpy as np
 import csv
 
 import decimal
 decimal.getcontext().prec = 2
 
-from blastdb_extract_sequences import fasta_output_file
+import numpy as np
 import pandas as pd
 # example to show how to write named matrices to file with pandas
 # ----
@@ -20,39 +19,7 @@ import pandas as pd
 # df = pd.DataFrame(A, index=names, columns=names)
 # df.to_csv('df.csv', index=True, header=True, sep=' ')
 
-
-# Constants
-POSITION = 0
-MOTIF = 1
-KMER  = 2
-ZSCORE  = 3
-PVALUE  = 4
-NUCLEOTIDES = "ACUG"
-
-# Globals
-all_RBPs = {}
-motif = "motif"
-occurances = "occurances"
-positions = "positions"
-k_mers = "k_mers"
-average_pvalue = "average_pvalue"
-p_values = "p_values"
-
-
-
-#Paths
-
-server = False
-workspace = "/home/jonathan/Documents/data/"
-
-if server:
-    workspace = "/srv01/technion/jonathans/data/"
-
-rbp_data_folder = workspace + "rbp_motif_analysis/"
-rbp_motifs_per_gene_path = rbp_data_folder + "motifs_by_gene_name.tsv"
-genes_per_protein_path = rbp_data_folder + "genes_by_protein_name.tsv"
-genes_RBPs_matrix = rbp_data_folder + "genes_RBPs_matrix.tsv"
-genes_kmers_matrix = rbp_data_folder + "genes_kmers_matrix.tsv"
+from global_defs import *
 
  # Utility functions
 def is_number(string):
@@ -249,7 +216,7 @@ def get_RBP_motifs_all_genes(rbp_output_file = rbp_data_folder + "All_Prediction
     df_RBPs.to_csv(genes_RBPs_matrix, sep = '\t')
     # print df_RBPs
 
-def get_kmers_all_genes(all_genes_fasta = fasta_output_file):
+def get_kmers_all_genes(all_genes_fasta = utr_output_fasta):
     K = 6
     gene_name = "ERROR! Sequence appears before first gene name!"
     dKmers_per_gene = {}
@@ -276,5 +243,5 @@ def get_kmers_all_genes(all_genes_fasta = fasta_output_file):
 
 if __name__ == '__main__':
 
-    get_RBP_motifs_all_genes()
-    # get_kmers_all_genes()
+    # get_RBP_motifs_all_genes()
+    get_kmers_all_genes()

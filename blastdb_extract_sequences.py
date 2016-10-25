@@ -3,34 +3,11 @@
 import csv
 from subprocess import check_output
 # from feature_exraction import get_RBP_motifs_all_genes
+from global_defs import *
 
 # exon-starts are 0-based, exon-ends are 1-based
 # my_input_file = sys.argv[1]
 # my_output_file = sys.argv[2]
-
-
-
-# configure paths
-server = False
-
-data_folder = "/home/jonathan/Documents/data/"
-blastdb_path = data_folder + "blastdb/mm9"
-
-if server:
-    data_folder = "/srv01/technion/jonathans/data/"
-    blastdb_path = "/storage/md_reut/footprint/mm9/blastdb/mm9"
-
-input_folder = data_folder + "input/"
-input_annotations_file = input_folder + "mm9_ensGene_eric.gpe"
-
-output_folder = data_folder + "output/"
-tsv_output_file = output_folder +  "extracted_utrs_blastdb.tsv"
-fasta_output_file = output_folder + "extracted_utrs_blastdb.fa"
-
-blastdb_entries_file = input_folder + "blastdb_entries.txt"
-rbpmap_entries_file = input_folder + "RBPmap_entries.txt"
-
-LIMIT_INPUT_LINES = 100
 
 # line structure
 NAME_FIELD = 1
@@ -216,13 +193,13 @@ if __name__ == '__main__':
     output_header_rbp = ["name", "chr", "input sequences to RBP"]
 
     if bExtract_fasta:
-        with open(tsv_output_file, 'w') as tsv:
+        with open(utr_output_tsv, 'w') as tsv:
             writer = csv.writer(tsv,  delimiter="\t")
             writer.writerow(output_header_fasta)
             writer.writerows(output_lines)
         print("written tab delimeted file to {}".format(tsv_output_file))
 
-        with open(fasta_output_file, 'w') as fasta_file:
+        with open(utr_output_fasta, 'w') as fasta_file:
             for line in output_lines:
                 fasta_file.write(">" + line[0]+"\n")
                 fasta_file.write(line[5]+"\n\n")

@@ -1,19 +1,12 @@
 import numpy as np
 import csv
+from global_defs import *
+
 POSITION = 0
 MOTIF = 1
 KMER  = 2
 ZSCORE  = 3
 PVALUE  = 4
-
-server = False
-workspace = "/home/jonathan/Documents/"
-
-if server:
-    workspace = "/home/jonathan/"
-
-rbpMap_summary_file_name = workspace + "data/rbp_motifs/All_Predictions.txt"
-parsed_summary_file_name = workspace + "data/rbp_motifs/All_Predictions_parsed"
 
 all_RBPs = {}
 
