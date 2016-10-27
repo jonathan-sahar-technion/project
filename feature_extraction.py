@@ -9,6 +9,7 @@ decimal.getcontext().prec = 2
 
 import numpy as np
 import pandas as pd
+from collections import namedtuple
 # example to show how to write named matrices to file with pandas
 # ----
 # import numpy as np
@@ -61,8 +62,8 @@ def count_nucleotides_and_dinucleotides(name, sequence):
     header2, counts2 = count_dinucleotides(sequence)
     header = header1 + header2
     counts = counts1 + counts2
-    df = pd.DataFrame(counts, columns=header).set_index("name")
-    return df
+    # df = pd.DataFrame(counts, columns=header).set_index("name")
+    return {"header": header,"counts": counts}
 
 def update_global_genes_per_RBPs_dict(protein_name, gene_name):
     try:

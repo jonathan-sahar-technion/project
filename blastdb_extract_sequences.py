@@ -6,7 +6,7 @@ from subprocess import check_output
 from feature_extraction import count_nucleotides_and_dinucleotides, get_RBP_motifs_all_genes
 from global_defs import *
 import pandas as pd
-
+from collections import namedtuple
 # exon-starts are 0-based, exon-ends are 1-based
 # my_input_file = sys.argv[1]
 # my_output_file = sys.argv[2]
@@ -153,10 +153,11 @@ def proccess_line(line, mode): # 'mode' is one of "blastcmd", "rbpmap"
         first_kept_start = exons_to_keep[0][0]
         first_kept_end = exons_to_keep[0][1]
         first_kept_size = first_kept_end - first_kept_start
-        res = run_blastdbcmd(blastcmd_entries)
-        utr_sequence = res.replace('\n', '')
-        df_counts.append(count_nucleotides_and_dinucleotides(joint_name, utr_sequence))
-        return  [joint_name, chrom, first_kept_start, first_kept_size, strand, utr_sequence, len(utr_sequence), len(exons_to_keep)]
+        utr_sequence = run_blastdbcmd(blastcmd_entries).replace('\n', '')
+
+        features_from_line = count_nucleotides_and_dinucleotides(joint_name, utr_sequence)["counts"] + [len(utr_sequence), len(exons_to_keep)]
+        sequence_params_from_line = [joint_name, chrom, first_kept_start, first_kept_size, strand, utr_sequence]
+        return sequence_params_from_line, features_from_line
 
     elif mode == 'rbpmap':
         print "mode detected: rbpmap"
@@ -186,16 +187,16 @@ if __name__ == '__main__':
                 continue #skeep non-coding RNAs
 
             if bExtract_fasta:
-                proccessed_line = proccess_line(line, 'blastcmd')
-                if len(proccessed_line) > 0:
-                    print proccessed_line
-                    output_lines.append(proccessed_line)
-                    features.append([proccessed_line[i] for i in [0,6,7]])
+                extracted_sequence_line, extracted_features = proccess_line(line, 'blastcmd')
+                if len(extracted_sequence_line) > 0:
+                    print extracted_sequence_line
+                    output_lines.append(extracted_sequence_line)
+                    features.append([extracted_sequence_line[i] for i in [0, 6, 7]])
             if bCreate_RBPmap_entries:
-                proccessed_line = proccess_line(line, 'rbpmap')
-                if len(proccessed_line) > 0:
-                    print proccessed_line
-                    rbpmap_entries.append(proccessed_line)
+                extracted_sequence_line = proccess_line(line, 'rbpmap')
+                if len(extracted_sequence_line) > 0:
+                    print extracted_sequence_line
+                    rbpmap_entries.append(extracted_sequence_line)
 
     output_header_fasta = ["name", "chr", "first_exon_start", "first_exon_size", "strand", "5'_UTR", "UTR_length", "num_of_exons"]
     output_header_rbp = ["name", "chr", "input sequences to RBP"]
