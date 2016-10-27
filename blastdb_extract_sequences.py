@@ -1,9 +1,11 @@
 #!/Local/Anaconda-2.0.1-Linux-x86_64/bin/python
 
 import csv
+from corebio.seq import protein
 from subprocess import check_output
-# from feature_exraction import get_RBP_motifs_all_genes
+from feature_extraction import count_nucleotides_and_dinucleotides, get_RBP_motifs_all_genes
 from global_defs import *
+import pandas as pd
 
 # exon-starts are 0-based, exon-ends are 1-based
 # my_input_file = sys.argv[1]
@@ -27,8 +29,12 @@ START = 0
 END = 1000000000
 
 # run blastdbcmd? RBPmap?
-bExtract_fasta = False
-bCreate_RBPmap_entries = True
+bExtract_fasta = True
+bCreate_RBPmap_entries = False
+
+# globals to extract features from positional annotations
+g_df_features = pd.DataFrame()
+df_counts = pd.DataFrame()
 
 def run_blastdbcmd(entries):
     # write entries to temporary file
@@ -66,28 +72,29 @@ def proccess_line(line, mode): # 'mode' is one of "blastcmd", "rbpmap"
     exons_to_keep = []
     rbpmap_entries = []
 
-     # extract info from line
+    # extract info from line
     strand = line[STRAND_FIELD]
     name = line[NAME_FIELD]
     name2 = line[NAME2_FIELD]
+    joint_name = name2 + "_" + name
     chrom = line[CHROM_FIELD]
     tx_start = line[TX_START_FIELD]
     tx_end = line[TX_END_FIELD]
+    cds_end= int(line[CDS_END_FIELD])
+    cds_start = int(line[CDS_START_FIELD])
 
     # A note on 0/1 based representation: the basic data file we're processing here is called bigGenePred, which is almost
     # the internal representation of the UCSC genome browser. It uses start coordinates that are 0 based and end coordinates that are
     # 1 based. We need coordinates for blastdbcmd, which requires consistent 1 based representation.
 
     # break the list fields into lists
-    exon_starts =  [int(x) +1 for x in line[EXON_STARTS_FIELD].split(",")[:-1]] # -1 for removing the empty member at the end of the list
-                                                                                # +1 because the bed file start indices are zero-based
+    # +1 because the bed file start indices are zero-based
     exon_ends =  [int(x) for x in line[EXON_ENDS_FIELD].split(",")[:-1]] # -1 for removing the empty member at the end of the list
+    exon_starts =  [int(x) +1 for x in line[EXON_STARTS_FIELD].split(",")[:-1]] # -1 for removing the empty member at the end of the list
 
     entries = ""
 
     if strand == '+':
-        cds_start = int(line[CDS_START_FIELD])
-        cds_end= int(line[CDS_END_FIELD])
 
         # 3' ----------------------------------------  5'
         # 5' -----ex_start-----ex_end-----cds_start--> 3'
@@ -119,8 +126,7 @@ def proccess_line(line, mode): # 'mode' is one of "blastcmd", "rbpmap"
 
         # 3' <-----ex_start----cds_start-----ex_end-- 5'
         # 5' ---------------------------------------- 3'
-        cds_start = int(line[CDS_START_FIELD])
-        cds_end = int(line[CDS_END_FIELD])
+
 
         # list of tuples of coordinates, where the the start of the exon is before the start of the CDS
         # exons_to_keep = [(int(exon_starts[i]),int(exon_end))
@@ -149,13 +155,14 @@ def proccess_line(line, mode): # 'mode' is one of "blastcmd", "rbpmap"
         first_kept_size = first_kept_end - first_kept_start
         res = run_blastdbcmd(blastcmd_entries)
         utr_sequence = res.replace('\n', '')
-        return  [name + "_" + name2, chrom, first_kept_start, first_kept_size, strand, utr_sequence]
+        df_counts.append(count_nucleotides_and_dinucleotides(joint_name, utr_sequence))
+        return  [joint_name, chrom, first_kept_start, first_kept_size, strand, utr_sequence, len(utr_sequence), len(exons_to_keep)]
 
     elif mode == 'rbpmap':
         print "mode detected: rbpmap"
         # print rbpmap_entries
         # print "\n"
-        return [name + "_" + name2] + [e for e in rbpmap_entries]
+        return [joint_name] + [e for e in rbpmap_entries]
         # return rbpmap_entries
 
     return []
@@ -165,6 +172,7 @@ if __name__ == '__main__':
     print "Proccessing", input_annotations_file, "..."
     output_lines = []
     rbpmap_entries = []
+    features = []
     count = 0
     with open(input_annotations_file, 'r') as tsv:
         reader = csv.reader(tsv,  delimiter="\t")
@@ -182,28 +190,32 @@ if __name__ == '__main__':
                 if len(proccessed_line) > 0:
                     print proccessed_line
                     output_lines.append(proccessed_line)
-
+                    features.append([proccessed_line[i] for i in [0,6,7]])
             if bCreate_RBPmap_entries:
                 proccessed_line = proccess_line(line, 'rbpmap')
                 if len(proccessed_line) > 0:
                     print proccessed_line
                     rbpmap_entries.append(proccessed_line)
 
-    output_header_fasta = ["name", "chr", "first_exon_start", "first_exon_size", "strand", "5'_UTR"]
+    output_header_fasta = ["name", "chr", "first_exon_start", "first_exon_size", "strand", "5'_UTR", "UTR_length", "num_of_exons"]
     output_header_rbp = ["name", "chr", "input sequences to RBP"]
 
     if bExtract_fasta:
+        g_df_features = pd.DataFrame(features, columns=["name", "utr_length", "num_exons"]).set_index("name")
+        print g_df_features
+        exit()
+
         with open(utr_output_tsv, 'w') as tsv:
             writer = csv.writer(tsv,  delimiter="\t")
             writer.writerow(output_header_fasta)
             writer.writerows(output_lines)
-        print("written tab delimeted file to {}".format(tsv_output_file))
+        print("written tab delimeted file to {}".format(utr_output_tsv))
 
         with open(utr_output_fasta, 'w') as fasta_file:
             for line in output_lines:
                 fasta_file.write(">" + line[0]+"\n")
                 fasta_file.write(line[5]+"\n\n")
-            print("written fasta file to {}".format(fasta_output_file))
+            print("written fasta file to {}".format(utr_output_fasta))
 
     if bCreate_RBPmap_entries:
         with open(rbpmap_entries_file, 'w') as rbpmap_file:

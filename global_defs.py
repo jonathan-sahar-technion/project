@@ -19,8 +19,8 @@ p_values = "p_values"
 
 
 #Paths
-location = "home"
-# location = "lab"
+# location = "home"
+location = "lab"
 # location = "ATLAS"
 
 if location == "home":
@@ -47,8 +47,8 @@ parsed_summary_file_name = workspace + "All_Predictions_parsed"
 
 rbp_motifs_per_gene_file = rbp_data_folder + "motifs_by_gene_name.tsv"
 genes_per_protein_file = rbp_data_folder + "genes_by_protein_name.tsv"
-genes_RBPs_matrix = rbp_data_folder + "genes_RBPs_matrix.tsv"
-genes_kmers_matrix = rbp_data_folder + "genes_kmers_matrix.tsv"
+rbp_occurances_per_gene = rbp_data_folder + "RBPs_occurances_per_gene.tsv"
+kmer_occurances_per_gene = workspace + "kmer_occurances_per_gene.tsv"
 
 input_annotations_file = input_folder + "mm9_ensGene_eric.gpe"
 
@@ -58,4 +58,4 @@ utr_output_fasta = output_folder + "UTR_sequences.fa"
 blastdb_entries_file = input_folder + "blastdb_entries.txt"
 rbpmap_entries_file = input_folder + "RBPmap_entries.txt"
 
-LIMIT_INPUT_LINES = 100
+LIMIT_INPUT_LINES = 10
