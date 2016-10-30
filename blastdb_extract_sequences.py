@@ -1,6 +1,6 @@
 #!/Local/Anaconda-2.0.1-Linux-x86_64/bin/python
 
-import  csv
+import csv
 from corebio.seq import protein
 from subprocess import check_output
 from feature_extraction import count_nucleotides_and_dinucleotides, get_RBP_motifs_all_genes
